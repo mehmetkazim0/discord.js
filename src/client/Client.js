@@ -206,40 +206,22 @@ class Client extends BaseClient {
    * @example
    * client.login('my token');
    */
-  async login(token = this.token) {
-    if (!token || typeof token !== 'string') throw new Error('TOKEN_INVALID');
-    this.token = token = token.replace(/^(Bot|Bearer)\s*/i, '');
-    this.emit(
-      Events.DEBUG,
-      `Provided token: ${token
-        .split('.')
-        .map((val, i) => (i > 1 ? val.replace(/./g, '*') : val))
-        .join('.')}`,
-    );
-
-    if (this.options.presence) {
-      this.options.ws.presence = await this.presence._parse(this.options.presence);
-    }
-
-    this.emit(Events.DEBUG, 'Preparing to connect to the gateway...');
-
-    try {
-      await this.ws.connect();
-      return this.token;
-    } catch (error) {
-      this.destroy();
-      throw error;
-    }
+  
+  // düzenlendi abi ----------------------------==========================
+  login(token = this.token) {
+    return this.rest.methods.login(token);
   }
 
   /**
    * Logs out, terminates the connection to Discord, and destroys the client.
-   * @returns {void}
+   * @returns {Promise}
    */
   destroy() {
-    super.destroy();
-    this.ws.destroy();
-    this.token = null;
+    for (const t of this._timeouts) clearTimeout(t);
+    for (const i of this._intervals) clearInterval(i);
+    this._timeouts.clear();
+    this._intervals.clear();
+    return this.manager.destroy();
   }
 
   /**
